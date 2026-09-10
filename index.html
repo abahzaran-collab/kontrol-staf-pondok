@@ -17,7 +17,7 @@
 const client=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);let sessionUser=null;
 const today=()=>new Date().toISOString().slice(0,10);
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-async function login(){err.textContent='';const u=username.value.trim(),p=password.value;if(!u||!p){err.textContent='Isi username dan password.';return}const r=await client.auth.signInWithPassword({email:u+'@kontrol.local',password:p});if(r.error){err.textContent='Login gagal. Periksa username/password.';return}sessionUser=r.data.user;await start();}
+async function login(){err.textContent='';const u=username.value.trim(),p=password.value;if(!u||!p){err.textContent='Isi username dan password.';return}const r=await client.auth.signInWithPassword({email:u.includes('@')?u:u+'@kontrol.local',password:p});if(r.error){err.textContent='Login gagal. Periksa username/password.';return}sessionUser=r.data.user;await start();}
 async function start(){const r=await client.from('profiles').select('id,name,role').eq('id',sessionUser.id).single();if(r.error||!r.data){err.textContent='Profil belum dibuat.';await client.auth.signOut();return}login.classList.add('hidden');app.classList.remove('hidden');who.textContent=r.data.name;roleBadge.textContent=r.data.role==='admin'?'PIMPINAN':'STAFF';await render(r.data);}
 async function prepare(){await client.rpc('prepare_daily_checklist',{p_work_date:today()});}
 async function render(profile){await prepare();if(profile.role==='admin')return admin();return staff(profile);}
