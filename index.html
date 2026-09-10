@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kontrol Staf</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f4f6f8;color:#17202a;font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif}
+header{background:#16324f;color:#fff;padding:18px}main{max-width:950px;margin:auto;padding:14px}.card{background:#fff;border-radius:16px;padding:16px;margin-bottom:14px;box-shadow:0 2px 9px #0001}
+input,button{font:inherit;padding:11px;border-radius:10px;border:1px solid #d6dce1}button{font-weight:700;cursor:pointer}.primary{background:#1f7a5a;color:white}
+.login{max-width:420px;margin:12vh auto}.field{display:grid;gap:5px;margin:10px 0}.hidden{display:none}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}.person{border:1px solid #e1e6ea;border-radius:13px;padding:13px;cursor:pointer}
+.progress{height:10px;background:#e4e8eb;border-radius:99px;overflow:hidden;margin:8px 0}.fill{height:100%;background:#1f7a5a}.pct{font-size:24px;font-weight:800}
+.task{display:flex;gap:11px;padding:13px 2px;border-bottom:1px solid #edf0f2}.task input{width:23px;height:23px}.done b{text-decoration:line-through;opacity:.5}
+.meta{display:block;font-size:12px;color:#66727d;margin-top:3px}.ok{color:#146c43}.pending{color:#a51d16;font-weight:700}.warn{color:#7a5600}
+</style></head><body>
+<header><h2>Board Kontrol Staf</h2><div style="opacity:.8;font-size:12px">Online • Pimpinan & Staf</div></header>
+<main>
+<section id="login" class="card login"><h2>Login</h2><div class="field"><label>Username</label><input id="username"></div><div class="field"><label>Password</label><input id="password" type="password"></div><button class="primary" style="width:100%" onclick="login()">Masuk</button><p id="err" style="color:#b42318"></p></section>
+<section id="app" class="hidden"><div class="card"><b id="who"></b> <button style="float:right" onclick="logout()">Keluar</button></div><div id="content"></div></section>
+</main>
+<script>
+const tasks={"Ustadz Muhammad Firman Syah": ["Mengelola kantin", "Mengurus simpan pinjam santri", "Memastikan sarpras asrama putra memadai", "Bekerjasama dengan Ustadz Suhaimi terkait sarpras", "Membimbing anak-anak Ospiq bersama Ustadz Selamat", "Mengevaluasi progres bahasa bersama team bahasa", "Berkoordinasi dengan bagian kebersihan terkait pembuangan sampah", "Membantu pondok mencari pupuk (kotoran binatang)", "Menyiapkan media peningkatan bahasa", "Merenovasi pondok jika perlu"], "Ustadzah Sumi Purwayi": ["Mengabsen kepala sekolah dan direktur", "Mengevaluasi peningkatan tahfidz", "Mengevaluasi peningkatan belajar", "Mengontrol piket harian", "Mengontrol pengawas sholat", "Mengevaluasi kegiatan murojaah", "Mengontrol sarapan pagi, makan siang dan makan malam", "Mengawasi, supervisi dan evaluasi kegiatan tahfidz pagi, sore dan malam", "Memastikan pondok bersih setiap hari", "Menerima laporan list kerja dari setiap management, pembina asrama dan piket harian"], "Ustadz Ilham Wahyudi": ["Membimbing dan mengajar santri setiap hari", "Mengevaluasi ibadah setiap hari", "Evaluasi efektif melalui pemanggilan santri secara aktif", "Broadcasting", "Melaksanakan kegiatan Go to masjid", "Mengajar dan supervisi", "Memastikan seluruh kegiatan pondok berjalan dengan baik", "Menyiapkan tontonan santri", "Memastikan kegiatan bahasa"], "Ustadzah Roudhotun": ["Penanggung jawab upacara", "Mengevaluasi kegiatan murojaah", "Memberikan suri tauladan", "Memberikan nasihat dan motivasi kepada santri sewaktu waktu", "Mendata santri yang bermasalah dan membimbingnya", "Mengabsen santri setiap hari dan melaporkan jumlah kehadiran santri", "Melaksanakan pengabsenan terjadwal dan sewaktu waktu", "Memanggil santri yang bermasalah dan membimbingnya", "Melayani perizinan santri", "Bertutur kata yang baik kepada walisantri", "Memastikan keamanan pintu, jendela dan asrama sebelum tidur", "Selalu peka dengan santri yang sakit"], "Ustadzah Nadia Fadilla": ["Mengajar", "Tahfidz", "Memastikan anak-anak benar dalam melaksanakan ibadah", "Mengevaluasi sholat ustazah", "Menyusun program kerja dan jadwal kegiatan asrama", "Memastikan seluruh kegiatan asrama berjalan tertib, aman, dan sesuai aturan pondok", "Mengontrol kehadiran santri pada seluruh kegiatan wajib", "Memastikan kebersihan, kerapian, dan keamanan lingkungan asrama", "Memantau kondisi santri, baik dari aspek kedisiplinan, kesehatan, maupun kenyamanan", "Mengadakan briefing singkat dengan pengurus asrama untuk pembagian tugas", "Mengawasi fasilitas asrama setiap hari", "Memimpin rapat evaluasi bersama seluruh pengurus asrama terjadwal", "Mengevaluasi kinerja setiap bagian kepengurusan", "Mengkoordinasikan kegiatan kebersihan atau kerja bakti bersama", "Mengecek asrama setiap hari (di waktu waktu tertentu)", "Memastikan sapras asrama putri memadai", "Membimbing anak-anak Ospiq bersama usth Raudhatun terjadwal", "Mengawasi seluruh kerja pembina asrama"], "Ustadz Zaki": ["Penanggung jawab upacara", "Mengevaluasi kegiatan murojaah", "Memberikan suri tauladan", "Memberikan nasihat dan motivasi kepada santri sewaktu waktu", "Mendata santri yang bermasalah dan membimbingnya", "Mengabsen santri setiap hari dan melaporkan jumlah kehadiran santri", "Melaksanakan pengabsenan terjadwal dan sewaktu waktu", "Memanggil santri yang bermasalah dan membimbingnya", "Melayani perizinan santri", "Bertutur kata yang baik kepada walisantri", "Memastikan keamanan pintu, jendela dan asrama sebelum tidur", "Selalu peka dengan santri yang sakit"], "Ustadz Syahrul": ["Memastikan kebersihan asrama depan dan belakang", "Memastikan kebersihan seluruh WC asrama depan dan belakang", "Memastikan kerapian lemari setiap kamar", "Memastikan kebersihan kipas angin", "Memastikan kebersihan kaca", "Memastikan kebersihan karpet masjid", "Mengecek kebersihan TPA", "Memastikan kebersihan selokan", "Mencuci tong sampah jika sudah terlalu kotor", "Memastikan sampah café, kantin, dan asrama sudah kosong sebelum kunjungan", "Memastikan alat kebersihan lengkap", "Memastikan kebersihan halaman, ruang belajar, dan mushala", "Memastikan kerapian dan kebersihan ampai(an)", "Memastikan pondok rapi, bersih dan asri", "Menguras bak mandi sesuai jadwal", "Berkeliling setiap hari memantau kebersihan", "Menjemur kasur dan bantal sesuai dengan jadwal", "Hadir di sekolah jam 7.35 sampai jam 14.00", "Melaksanakan pembinaan guru setiap bulan", "Menyidak perangkat guru sewaktu waktu", "Melaksanakan supervisi setiap kelas setiap hari", "Mengevaluasi hasil belajar santri per minggu", "Membina karakter disiplin dan akhlak peserta didik setiap hari", "Mengontrol kegiatan minat", "Mengontrol kegiatan Bahasa", "Memastikan pengontrolan CCTV jam istirahat pagi", "Memastikan laporan guru asuh di grup kelas", "Menyiapkan peserta peserta lomba di segala bidang", "Mengevaluasi walikelas sewaktu waktu", "Memikirkan ide ide untuk kemaslahatan pondok", "Melaksanakan upacara 2 minggu sekali", "Membuat jadwal pelajaran", "Mengikuti rapat rapat kedinasan", "Melaksanakan program Go To School", "Menyusun agenda tahunan", "Memanggil guru guru yang bermasalah sewaktu waktu (mengecek absensi guru)", "Memastikan sarana dan prasarana proses belajar mengajar lengkap dan memadai"], "Ustadz Selamat": ["Memanggil santri bermasalah", "Berkoordinasi dengan walisantri bila mana perlu", "Memastikan rekapan absen setiap hari minggu", "Melaksanakan kegiatan Etiket santri sebelum perpulangan", "Mengadakan evaluasi kedisiplinan santri bersama pengurus terjadwal", "Memberikan motivasi kepada santri sewaktu waktu", "Melaksanakan pembinaan khusus bagi santri yang membutuhkan", "Memastikan santri berpakaian yang rapi, sopan, dan sesuai dengan ketentuan pondok", "Hadir di sekolah jam 7.35 sampai jam 14.00", "Melaksanakan pembinaan guru setiap bulan", "Melaksanakan supervisi setiap kelas setiap hari", "Mengevaluasi hasil belajar santri per minggu", "Membina karakter disiplin dan akhlak peserta didik setiap hari", "Mengontrol kegiatan minat", "Mengontrol kegiatan Bahasa", "Memastikan pengontrolan CCTV jam istirahat pagi", "Memastikan laporan guru asuh di grup kelas", "Menyiapkan peserta peserta lomba di segala bidang", "Mengevaluasi walikelas sewaktu waktu", "Memikirkan ide ide untuk kemaslahatan pondok", "Melaksanakan upacara 2 minggu sekali", "Membuat jadwal pelajaran", "Mengikuti rapat rapat kedinasan", "Melaksanakan program Go To School", "Menyusun agenda tahunan", "Memanggil guru guru yang bermasalah sewaktu waktu (mengecek absensi guru)", "Memastikan sarana dan prasarana proses belajar mengajar lengkap dan memadai"]};
+let sessionUser=null, staffMap={};
+async function login(){
+ const u=username.value.trim(), p=password.value;
+ if(SUPABASE_URL.includes("PASTE_")){err.textContent="Konfigurasi online belum diisi. Ikuti README.";return}
+ const {data,error}=await supabase.auth.signInWithPassword({email:u+"@kontrol.local",password:p});
+ if(error){err.textContent="Login gagal. Periksa username/password.";return}
+ sessionUser=data.user; await loadProfile(); render();
+}
+async function loadProfile(){
+ const {data,error}=await supabase.from("profiles").select("*").eq("id",sessionUser.id).single();
+ if(error){err.textContent="Profil belum dibuat.";return}
+ staffMap=JSON.parse(localStorage.getItem("staffTasks")||"{}");
+ document.getElementById("login").classList.add("hidden");document.getElementById("app").classList.remove("hidden");
+ document.getElementById("who").textContent=data.name+" • "+data.role;
+}
+async function logout(){await supabase.auth.signOut();location.reload()}
+async function render(){
+ const {data:profile}=await supabase.from("profiles").select("*").eq("id",sessionUser.id).single();
+ if(profile.role==="admin") await admin(); else await staff(profile);
+}
+async function staff(profile){
+ let d=new Date().toISOString().slice(0,10), list=tasks[profile.name]||[];
+ const {data:checks}=await supabase.from("checklists").select("*").eq("staff_id",sessionUser.id).eq("work_date",d);
+ const map={};(checks||[]).forEach(x=>map[x.task_no]=x);
+ let done=list.filter((_,i)=>map[i]?.done).length,p=Math.round(done/list.length*100)||0;
+ content.innerHTML=`<div class="card"><h2>${profile.name}</h2><div>${done}/${list.length} selesai • ${p}%</div><div class="progress"><div class="fill" style="width:${p}%"></div></div></div><div class="card"><h3>Checklist Hari Ini</h3>${list.map((t,i)=>{let x=map[i];return `<label class="task ${x?.done?'done':''}"><input type="checkbox" ${x?.done?'checked':''} onchange="toggle(${i},this.checked)"><span><b>${i+1}. ${t}</b><span class="meta ${x?.done?'ok':'pending'}">${x?.done?'✓ Selesai • '+x.completed_at:'Belum dikerjakan'}</span></span></label>`}).join("")}</div>`;
+}
+async function toggle(i,v){
+ let d=new Date().toISOString().slice(0,10);
+ await supabase.from("checklists").upsert({staff_id:sessionUser.id,work_date:d,task_no:i,done:v,completed_at:v?new Date().toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"}):null},{onConflict:"staff_id,work_date,task_no"});
+ render();
+}
+async function admin(){
+ let d=new Date().toISOString().slice(0,10);
+ const {data:profiles}=await supabase.from("profiles").select("*").eq("role","staff").order("name");
+ const {data:checks}=await supabase.from("checklists").select("*").eq("work_date",d);
+ const by={};(checks||[]).forEach(x=>(by[x.staff_id]??={})[x.task_no]=x);
+ content.innerHTML=`<div class="card"><h2>Dashboard Pimpinan</h2><div class="grid">${profiles.map(p=>{let list=tasks[p.name]||[],m=by[p.id]||{},done=list.filter((_,i)=>m[i]?.done).length,pct=Math.round(done/list.length*100)||0;return `<div class="person"><b>${p.name}</b><div class="pct">${pct}%</div><div class="meta">${done}/${list.length} tugas selesai</div><div class="progress"><div class="fill" style="width:${pct}%"></div></div></div>`}).join("")}</div></div><div class="card"><h2>⚠️ Belum Selesai Hari Ini</h2>${profiles.map(p=>{let list=tasks[p.name]||[],m=by[p.id]||{},items=list.filter((_,i)=>!m[i]?.done);return items.length?`<div style="margin:10px 0"><b>${p.name} — ${items.length}</b>${items.map(x=>`<div class="meta pending">☐ ${x}</div>`).join("")}</div>`:""}).join("")||"<div class='ok'>Semua tugas selesai.</div>"}</div>`;
+}
+const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+
+</script></body></html>
